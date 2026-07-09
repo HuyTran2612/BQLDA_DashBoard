@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cấu Hình Tham Số Hệ Thống - QLDA Pro</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .config-form { max-width: 600px; margin-top: 20px; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; font-weight: bold; margin-bottom: 8px; font-size: 14px; color: #2c3e50; }
+        .form-group input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; }
+        .form-group small { color: #7f8c8d; font-size: 12px; display: block; margin-top: 4px; }
+        .btn-save { background-color: #27ae60; color: white; border: none; padding: 14px 24px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 15px; display: flex; align-items: center; gap: 8px;}
+        .btn-save:hover { background-color: #219a52; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <aside class="sidebar">
+            <div class="logo"><h2><i class="fa-solid fa-layer-group"></i> QLDA Pro</h2></div>
+            <nav>
+                <ul>
+                    <li><a href="/"><i class="fa-solid fa-chart-pie"></i> Tổng quan</a></li>
+                    <li><a href="/progress-hub.html"><i class="fa-solid fa-trowel-bricks"></i> Tiến độ thi công</a></li>
+                    <li><a href="/disburse-hub.html"><i class="fa-solid fa-money-bill-trend-up"></i> Tiến độ giải ngân</a></li>
+                    <li><a href="/risk-hub.html"><i class="fa-solid fa-triangle-exclamation"></i> Trung tâm rủi ro</a></li>
+                    <li class="active"><a href="/config-hub.html"><i class="fa-solid fa-gear"></i> Cấu hình hệ thống</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header>
+                <h1>Cấu Hình Hệ Thống & Tham Số Điều Hành</h1>
+                <span class="badge" style="background-color:#27ae60; color:#fff; padding:6px 12px; border-radius:20px;"><i class="fa-solid fa-lock"></i> Cấp bậc: C-Level</span>
+            </header>
+
+            <div class="card">
+                <h2>Cấu hình tham số lõi của Risk Engine</h2>
+                <p style="color:#7f8c8d; font-size:13px; margin-top:4px;">Thay đổi các thông số dưới đây sẽ định hình lại logic phân tích rủi ro tức thời của toàn bộ dự án.</p>
+                
+                <form id="sysConfigForm" class="config-form">
+                    <div class="form-group">
+                        <label>Hạn mức trần ngân sách dự án (Tỷ VND)</label>
+                        <input type="number" id="cfgBudgetCap" required>
+                        <small>Tổng hạn mức phê duyệt nguồn vốn tối đa cho toàn bộ các gói thầu cộng lại.</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Ngưỡng báo động chạm trần (%)</label>
+                        <input type="number" id="cfgThreshold" min="50" max="100" required>
+                        <small>Phát cảnh báo màu cam lên màn hình giám sát khi tổng giá trị ký hợp đồng vượt ngưỡng phần trăm này.</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Biên độ dung sai lệch pha dòng vốn (Tỷ VND)</label>
+                        <input type="number" id="cfgBuffer" required>
+                        <small>Biên độ cho phép nhà thầu xin thanh toán/tạm ứng vượt khối lượng nghiệm thu hiện trường trước khi hệ thống kích hoạt cảnh báo Over-billing.</small>
+                    </div>
+
+                    <button type="submit" class="btn-save"><i class="fa-solid fa-floppy-disk"></i> Lưu cấu hình hệ thống</button>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // 1. Tải cấu hình hiện tại đang lưu ở Backend lên form
+        async function fetchCurrentConfig() {
+            const res = await fetch('/api/config');
+            const data = await res.json();
+            
+            document.getElementById('cfgBudgetCap').value = data.totalProjectBudgetCap;
+            document.getElementById('cfgThreshold').value = data.warningThresholdPercent;
+            document.getElementById('cfgBuffer').value = data.overBillingBuffer;
+        }
+
+        // 2. Submit cập nhật cấu hình mới lên Backend
+        document.getElementById('sysConfigForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const payload = {
+                totalProjectBudgetCap: document.getElementById('cfgBudgetCap').value,
+                warningThresholdPercent: document.getElementById('cfgThreshold').value,
+                overBillingBuffer: document.getElementById('cfgBuffer').value
+            };
+
+            const res = await fetch('/api/config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const result = await res.json();
+
+            if(result.success) {
+                alert(result.message);
+                fetchCurrentConfig(); // nạp lại dữ liệu mới nhất
+            } else {
+                alert("Lỗi cấu hình không thành công.");
+            }
+        });
+
+        // Chạy tải dữ liệu khi khởi tạo trang
+        fetchCurrentConfig();
+    </script>
+</body>
+</html>

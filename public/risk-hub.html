@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trung Tâm Cảnh Báo Rủi Ro & Dự Báo Dòng Vốn</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .risk-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 25px; margin-top: 20px; }
+        @media (max-width: 900px) { .risk-grid { grid-template-columns: 1fr; } }
+        
+        .risk-card { background: #fff; border-radius: 8px; padding: 20px; margin-bottom: 15px; border-left: 6px solid #ccc; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
+        .risk-danger { border-left-color: #c0392b; background: #fdf2f2; }
+        .risk-warning { border-left-color: #d35400; background: #fff9f2; }
+        .risk-info { border-left-color: #f1c40f; background: #fcfcf3; }
+        
+        .badge-level { padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; color: white; text-transform: uppercase; display: inline-block;}
+        .lbl-danger { background-color: #c0392b; }
+        .lbl-warning { background-color: #d35400; }
+        .lbl-info { background-color: #f1c40f; color: #333; }
+
+        .progress-track { background: #e0e0e0; border-radius: 8px; height: 24px; width: 100%; overflow: hidden; margin-top: 10px; position: relative;}
+        .progress-fill { background: linear-gradient(90deg, #2c3e50, #c0392b); height: 100%; transition: 0.5s; }
+        .progress-text { position: absolute; width: 100%; text-align: center; font-size: 12px; line-height: 24px; font-weight: bold; color: #fff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <aside class="sidebar">
+            <div class="logo"><h2><i class="fa-solid fa-layer-group"></i> QLDA Pro</h2></div>
+            <nav>
+                <ul>
+                    <li><a href="/"><i class="fa-solid fa-chart-pie"></i> Tổng quan</a></li>
+                    <li><a href="/progress-hub.html"><i class="fa-solid fa-trowel-bricks"></i> Tiến độ thi công</a></li>
+                    <li><a href="/disburse-hub.html"><i class="fa-solid fa-money-bill-trend-up"></i> Tiến độ giải ngân</a></li>
+                    <li class="active"><a href="/risk-hub.html"><i class="fa-solid fa-triangle-exclamation"></i> Trung tâm rủi ro</a></li>
+                    <li><a href="/config-hub.html"><i class="fa-solid fa-gear"></i> Cấu hình hệ thống</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header>
+                <h1>Risk Analytics Engine - Hệ Thống Dự Báo & Quét Lỗi Tự Động</h1>
+                <span class="badge-level lbl-danger" style="font-size:13px; padding: 6px 12px;"><i class="fa-solid fa-robot"></i> AI Risk Monitoring</span>
+            </header>
+
+            <div class="risk-grid">
+                <div class="card">
+                    <h2><i class="fa-solid fa-vault"></i> Hạn mức vốn dự án</h2>
+                    <p style="font-size:14px; color:#666; margin-top:8px;">Kiểm soát rủi ro phá vỡ Tổng mức đầu tư ban đầu do phê duyệt quá nhiều gói thầu chi phí lớn:</p>
+                    
+                    <div style="margin-top:20px;">
+                        <p style="font-size:13px; display:flex; justify-content:space-between;">
+                            <span>Đã ký / Tổng vốn tối đa:</span>
+                            <span id="budgetRatioText">0 / 0 Tỷ</span>
+                        </p>
+                        <div class="progress-track">
+                            <div class="progress-text" id="budgetPercentText">0%</div>
+                            <div class="progress-fill" id="budgetBar" style="width: 0%;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2><i class="fa-solid fa-radar"></i> Nhật ký quét lỗi hệ thống tự động phát hiện</h2>
+                    <div id="riskListContainer" style="margin-top: 15px;">
+                        </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        async function runRiskEngine() {
+            const res = await fetch('/api/risks');
+            const data = await res.json();
+
+            // 1. Hiển thị thanh tiến trình hạn mức trần ngân sách dự án
+            document.getElementById('budgetRatioText').innerHTML = `<strong>${data.committed} Tỷ</strong> / ${data.projectCap} Tỷ VND`;
+            const rate = ((data.committed / data.projectCap) * 100).toFixed(1);
+            document.getElementById('budgetPercentText').innerText = `${rate}%`;
+            document.getElementById('budgetBar').style.width = `${rate > 100 ? 100 : rate}%`;
+
+            // 2. Hiển thị danh sách rủi ro quét được
+            const container = document.getElementById('riskListContainer');
+            if (data.risks.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align:center; padding:40px; color:#27ae60;">
+                        <i class="fa-solid fa-circle-check" style="font-size:40px;"></i>
+                        <h3 style="margin-top:10px;">Hệ thống an toàn!</h3>
+                        <p style="font-size:13px; color:#777; margin-top:4px;">Chưa phát hiện dấu hiệu chậm tiến độ hiện trường hoặc lệch pha tài chính chi trả.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = data.risks.map(risk => {
+                let cssClass = "risk-info";
+                let lblClass = "lbl-info";
+                if(risk.level === "CỰC KỲ NGUY HIỂM") { cssClass = "risk-danger"; lblClass = "lbl-danger"; }
+                if(risk.level === "Cảnh báo cao") { cssClass = "risk-warning"; lblClass = "lbl-warning"; }
+
+                return `
+                    <div class="risk-card ${cssClass}">
+                        <div style="display:flex; justify-content:between; align-items:center; width:100%;">
+                            <span class="badge-level ${lblClass}">${risk.level}</span>
+                            <span style="font-size:12px; color:#777; margin-left:auto; font-weight:bold;"><i class="fa-solid fa-tags"></i> ${risk.type}</span>
+                        </div>
+                        <h3 style="margin-top:10px; font-size:16px; color:#2c3e50;">${risk.title}</h3>
+                        <p style="font-size:13px; color:#555; margin-top:6px; line-height:1.5;">${risk.desc}</p>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Chạy quét dữ liệu ngay khi load trang
+        runRiskEngine();
+    </script>
+</body>
+</html>
