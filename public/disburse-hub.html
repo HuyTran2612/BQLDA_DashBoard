@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trung Tâm Quản Lý Giải Ngân & Dòng Vốn</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .tab-navigation { display: flex; gap: 10px; margin-bottom: 25px; border-bottom: 2px solid #ddd; padding-bottom: 10px; }
+        .tab-btn { padding: 12px 20px; border: none; background: #e0e0e0; font-weight: bold; cursor: pointer; border-radius: 6px; display: flex; align-items: center; gap: 8px;}
+        .tab-btn.active { background: #e74c3c; color: white; }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
+        .grid-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; }
+        .full-width { grid-column: 1 / -1; }
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; margin-bottom: 4px; font-weight: 500; font-size: 14px;}
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; }
+        .btn-pay { background-color: #e74c3c; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; }
+        .btn-contract { background-color: #2c3e50; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; }
+        
+        .disburse-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px;}
+        .disburse-table th, .disburse-table td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
+        .disburse-table th { background-color: #f8f9fa; }
+        
+        .badge-status { padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; display: inline-block;}
+        .status-paid { background-color: #d4edda; color: #155724; }
+        .status-wait-kt { background-color: #fff3cd; color: #856404; }
+        .status-wait-gd { background-color: #cce5ff; color: #004085; }
+        .status-reject { background-color: #f8d7da; color: #721c24; }
+
+        .approve-item { display: flex; justify-content: space-between; background: #fdfdfd; padding: 15px; border: 1px solid #eee; border-radius: 8px; margin-bottom: 12px; align-items: center;}
+        .btn-action { border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; color: white;}
+        
+        .bar-outer { background: #e0e0e0; border-radius: 6px; overflow: hidden; height: 20px; width: 100%; margin-top: 5px; }
+        .bar-inner { background: #e74c3c; height: 100%; color: white; text-align: right; padding-right: 10px; font-size: 11px; line-height: 20px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <aside class="sidebar">
+            <div class="logo"><h2><i class="fa-solid fa-layer-group"></i> QLDA Pro</h2></div>
+            <nav>
+                <ul>
+                    <li><a href="/"><i class="fa-solid fa-chart-pie"></i> Tổng quan</a></li>
+                    <li><a href="/progress-hub.html"><i class="fa-solid fa-trowel-bricks"></i> Tiến độ thi công</a></li>
+                    <li class="active"><a href="/disburse-hub.html"><i class="fa-solid fa-money-bill-trend-up"></i> Tiến độ giải ngân</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header>
+                <h1>Phân Hệ Quản Lý Giải Ngân & Kế Hoạch Vốn</h1>
+                <span class="badge-status status-paid" style="font-size:13px;"><i class="fa-solid fa-user-shield"></i> Quyền: Admin tổng</span>
+            </header>
+
+            <div class="tab-navigation">
+                <button class="tab-btn active" onclick="switchTab(event, 'tab-request')"><i class="fa-solid fa-file-invoice-dollar"></i> 1 & 2. Lập đề nghị thanh toán</button>
+                <button class="tab-btn" onclick="switchTab(event, 'tab-approve')"><i class="fa-solid fa-user-check"></i> 3. Xét duyệt chứng từ</button>
+                <button class="tab-btn" onclick="switchTab(event, 'tab-report')"><i class="fa-solid fa-chart-line"></i> 4. Thống kê & Báo cáo vốn</button>
+            </div>
+
+            <div id="tab-request" class="tab-panel active">
+                <div class="grid-layout">
+                    <div class="card">
+                        <h2><i class="fa-solid fa-file-contract"></i> Khởi tạo Hợp đồng gốc</h2>
+                        <form id="contractForm" style="margin-top: 15px;">
+                            <div class="form-group"><label>Mã số Hợp đồng</label><input type="text" id="cId" placeholder="Ví dụ: HD-06" required></div>
+                            <div class="form-group"><label>Tên gói thầu / Hợp đồng</label><input type="text" id="cName" required></div>
+                            <div class="form-group"><label>Giá trị hợp đồng (Tỷ VND)</label><input type="number" id="cValue" required></div>
+                            <div class="form-group"><label>Khấu trừ tạm ứng (%)</label><input type="number" id="cAdvance" value="20" required></div>
+                            <div class="form-group"><label>Giữ lại bảo hành (%)</label><input type="number" id="cRetention" value="5" required></div>
+                            <button type="submit" class="btn-contract">Đăng ký hợp đồng</button>
+                        </form>
+                    </div>
+
+                    <div class="card">
+                        <h2><i class="fa-solid fa-receipt"></i> Tạo hồ sơ đề nghị chi</h2>
+                        <form id="disburseForm" style="margin-top: 15px;">
+                            <div class="form-group"><label>Chọn hợp đồng</label><select id="billContractId" required></select></div>
+                            <div class="form-group"><label>Kỳ thanh toán</label><input type="text" id="billPeriod" placeholder="Đợt 2" required></div>
+                            <div class="form-group"><label>Số tiền đề nghị (Tỷ VND)</label><input type="number" step="0.1" id="billAmount" required></div>
+                            <button type="submit" class="btn-pay">Gửi đề nghị & Khấu trừ tự động</button>
+                        </form>
+                    </div>
+
+                    <div class="card full-width">
+                        <h2><i class="fa-solid fa-clock-rotate-left"></i> Luồng lịch sử luân chuyển chứng từ</h2>
+                        <table class="disburse-table">
+                            <thead>
+                                <tr><th>Đợt thanh toán</th><th>Hợp đồng</th><th>Số tiền đề nghị</th><th style="color:#e74c3c;">Thực nhận sau trừ</th><th>Trạng thái hồ sơ</th></tr>
+                            </thead>
+                            <tbody id="disburseTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-approve" class="tab-panel">
+                <div class="card">
+                    <h2><i class="fa-solid fa-stamp"></i> Danh sách hồ sơ chờ kiểm tra tài chính</h2>
+                    <div id="approveContainer" style="margin-top:15px;"></div>
+                </div>
+            </div>
+
+            <div id="tab-report" class="tab-panel">
+                <div class="card" style="margin-bottom:20px;">
+                    <h2><i class="fa-solid fa-chart-column"></i> Biểu đồ tỷ lệ giải ngân thực tế (Chỉ tính hồ sơ đã chi tiền)</h2>
+                    <div style="position:relative; height:280px;"><canvas id="disburseChart"></canvas></div>
+                </div>
+                <div class="card">
+                    <h2>Tỷ lệ giải ngân lũy kế theo giá trị hợp đồng</h2>
+                    <div id="reportListContainer" style="margin-top:15px;"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        let myChart = null;
+
+        function switchTab(event, tabId) {
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            event.currentTarget.classList.add('active');
+
+            if(tabId === 'tab-request') { loadContractDropdown(); loadDisbursements(); }
+            if(tabId === 'tab-approve') loadApproveList();
+            if(tabId === 'tab-report') loadReport();
+        }
+
+        async function loadContractDropdown() {
+            const res = await fetch('/api/contracts');
+            const data = await res.json();
+            document.getElementById('billContractId').innerHTML = data.map(c => `<option value="${c.id}">${c.id} - ${c.name}</option>`).join('');
+        }
+
+        async function loadDisbursements() {
+            const res = await fetch('/api/disbursements');
+            const logs = await res.json();
+            document.getElementById('disburseTableBody').innerHTML = logs.map(l => `
+                <tr style="${l.warning ? 'background-color: #fff5f5;' : ''}">
+                    <td>
+                        <strong>${l.period}</strong>
+                        ${l.warning ? '<br><span style="color:#e74c3c; font-size:11px; font-weight:bold;"><i class="fa-solid fa-triangle-exclamation"></i> Cảnh báo: Lệch pha hiện trường!</span>' : ''}
+                    </td>
+                    <td>${l.contractName}</td>
+                    <td>${l.requestedAmount} Tỷ</td>
+                    <td style="color:#e74c3c; font-weight:bold;">${l.actualPay} Tỷ</td>
+                    <td><span class="badge-status ${l.status==='Đã giải ngân'?'status-paid':(l.status==='Bị từ chối'?'status-reject':l.status==='Chờ Giám đốc duyệt'?'status-wait-gd':'status-wait-kt')}">${l.status}</span></td>
+                </tr>
+            `).join('');
+        }
+
+        async function loadApproveList() {
+            const res = await fetch('/api/disbursements');
+            const logs = await res.json();
+            const container = document.getElementById('approveContainer');
+            const pending = logs.filter(l => l.status === "Chờ kế toán duyệt" || l.status === "Chờ Giám đốc duyệt");
+
+            if(pending.length === 0) { container.innerHTML = '<p>Không có chứng từ nào cần xử lý tài chính.</p>'; return; }
+            
+            container.innerHTML = pending.map(l => {
+                let actionBtn = "";
+                if(l.status === "Chờ kế toán duyệt") {
+                    actionBtn = `<button class="btn-action" style="background:#f1c40f;" onclick="triggerApprove(${l.id}, 'ke_toan_duyet')">Kế toán: Duyệt</button>`;
+                } else if(l.status === "Chờ Giám đốc duyệt") {
+                    actionBtn = `<button class="btn-action" style="background:#2ecc71;" onclick="triggerApprove(${l.id}, 'giam_doc_duyet')">Giám đốc: Ký chi</button>`;
+                }
+                return `
+                    <div class="approve-item" style="${l.warning ? 'border-left: 5px solid #e74c3c; background:#fff8f8;' : ''}">
+                        <div>
+                            <h4>${l.period} ${l.warning ? '<span style="color:#e74c3c; font-size:12px;">[NGUY CƠ LỆCH PHA CAO]</span>' : ''}</h4>
+                            <p style="font-size:13px; color:#555;">Hợp đồng: ${l.contractName} | Thực nhận: <strong style="color:#e74c3c;">${l.actualPay} Tỷ</strong></p>
+                        </div>
+                        <div style="display:flex; gap:8px;">
+                            ${actionBtn}
+                            <button class="btn-action" style="background:#e74c3c;" onclick="triggerApprove(${l.id}, 'tu_choi')">Từ chối</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function triggerApprove(id, action) {
+            await fetch('/api/disbursements/approve', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({logId: id, action: action}) });
+            alert("Đã cập nhật trạng thái luân chuyển hồ sơ!");
+            loadApproveList();
+        }
+
+        async function loadReport() {
+            const res = await fetch('/api/report/disbursement');
+            const data = await res.json();
+
+            document.getElementById('reportListContainer').innerHTML = data.map(item => `
+                <div style="margin-bottom:15px; font-size:13px;">
+                    <div style="display:flex; justify-content:space-between;">
+                        <span><strong>${item.name}</strong> (Đã chi: ${item.totalPaid} / Tổng: ${item.totalValue} Tỷ)</span>
+                        <span>${item.rate}%</span>
+                    </div>
+                    <div class="bar-outer"><div class="bar-inner" style="width: ${item.rate>100?100:item.rate}%"></div></div>
+                </div>
+            `).join('');
+
+            if(myChart) myChart.destroy();
+            const ctx = document.getElementById('disburseChart').getContext('2d');
+            myChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.map(i => i.id),
+                    datasets: [
+                        { label: 'Tổng giá trị hợp đồng', data: data.map(i => i.totalValue), backgroundColor: '#2c3e50' },
+                        { label: 'Lũy kế thực tế đã chi', data: data.map(i => i.totalPaid), backgroundColor: '#e74c3c' }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+
+        document.getElementById('contractForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const body = { id: document.getElementById('cId').value, name: document.getElementById('cName').value, totalValue: parseFloat(document.getElementById('cValue').value), advancePercent: parseFloat(document.getElementById('cAdvance').value), retentionPercent: parseFloat(document.getElementById('cRetention').value) };
+            await fetch('/api/contracts', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+            alert("Đã thêm hợp đồng mới!"); document.getElementById('contractForm').reset(); loadContractDropdown();
+        });
+
+        document.getElementById('disburseForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const body = { contractId: document.getElementById('billContractId').value, period: document.getElementById('billPeriod').value, requestedAmount: document.getElementById('billAmount').value };
+            await fetch('/api/disbursements', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+            alert("Đã gửi hồ sơ đề nghị!"); document.getElementById('disburseForm').reset(); loadDisbursements();
+        });
+
+        loadContractDropdown(); loadDisbursements();
+    </script>
+</body>
+</html>

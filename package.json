@@ -1,0 +1,10 @@
+{
+  "name": "bqlda-dashboard",
+  "version": "1.0.0",
+  "description": "Giao diện mẫu hệ thống QLDA",
+  "main": "server.js",
+  "dependencies": {
+    "express": "^4.19.2",
+    "multer": "^2.2.0"
+  }
+}

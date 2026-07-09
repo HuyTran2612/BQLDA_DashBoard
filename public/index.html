@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QLDA - Hệ Thống Theo Dõi Tiến Độ & Giải Ngân</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <aside class="sidebar">
+            <div class="logo">
+                <h2><i class="fa-solid fa-layer-group"></i> QLDA Pro</h2>
+            </div>
+            <nav>
+                <ul>
+                    <li class="active"><a href="#"><i class="fa-solid fa-chart-pie"></i> Tổng quan</a></li>
+                    <li><a href="/progress-hub.html"><i class="fa-solid fa-trowel-bricks"></i> Tiến độ thi công</a></li>
+                    <li><a href="/disburse-hub.html"><i class="fa-solid fa-money-bill-trend-up"></i> Tiến độ giải ngân</a></li>
+                    <li><a href="#"><i class="fa-solid fa-triangle-exclamation"></i> Cảnh báo rủi ro</a></li>
+                    <li><a href="#"><i class="fa-solid fa-gear"></i> Cấu hình hệ thống</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header>
+                <h1>Bảng Điều Hành Số (Dashboard)</h1>
+                <div class="user-profile">
+                    <span>Xin chào, <strong>Ban Quản Lý</strong></span>
+                    <i class="fa-regular fa-circle-user"></i>
+                </div>
+            </header>
+
+            <section class="kpi-container">
+                <div class="card kpi-card">
+                    <div class="kpi-icon blue"><i class="fa-solid fa-money-bill-wave"></i></div>
+                    <div class="kpi-info">
+                        <h3>Tổng vốn đầu tư</h3>
+                        <p>1,250 Tỷ VND</p>
+                    </div>
+                </div>
+                <div class="card kpi-card">
+                    <div class="kpi-icon green"><i class="fa-solid fa-hand-holding-dollar"></i></div>
+                    <div class="kpi-info">
+                        <h3>Đã giải ngân</h3>
+                        <p>450 Tỷ VND <span class="percentage">(36%)</span></p>
+                    </div>
+                </div>
+                <div class="card kpi-card">
+                    <div class="kpi-icon orange"><i class="fa-solid fa-bars-progress"></i></div>
+                    <div class="kpi-info">
+                        <h3>Tiến độ thi công TB</h3>
+                        <p>42%</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="card project-section">
+                <h2><i class="fa-solid fa-list-check"></i> Giám sát chi tiết dự án</h2>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Tên dự án</th>
+                                <th>Kế hoạch thi công</th>
+                                <th>Thực tế thi công</th>
+                                <th>Tỷ lệ giải ngân</th>
+                                <th style="text-align: center;">Trạng thái</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Cầu vượt nút giao X</strong></td>
+                                <td>60%</td>
+                                <td>
+                                    <div class="progress-bar-container">
+                                        <div class="progress-bar green-bar" style="width: 58%;">58%</div>
+                                    </div>
+                                </td>
+                                <td><strong>52%</strong> (Ứng vốn tốt)</td>
+                                <td style="text-align: center;"><span class="status status-green">Ổn định</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Đường vành đai nội đô</strong></td>
+                                <td>45%</td>
+                                <td>
+                                    <div class="progress-bar-container">
+                                        <div class="progress-bar yellow-bar" style="width: 38%;">38%</div>
+                                    </div>
+                                </td>
+                                <td><strong>40%</strong> (Chờ nghiệm thu)</td>
+                                <td style="text-align: center;"><span class="status status-yellow">Chậm nhẹ</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Bệnh viện đa khoa khu vực</strong></td>
+                                <td>30%</td>
+                                <td>
+                                    <div class="progress-bar-container">
+                                        <div class="progress-bar red-bar" style="width: 15%;">15%</div>
+                                    </div>
+                                </td>
+                                <td><strong>12%</strong> (Vướng mặt bằng)</td>
+                                <td style="text-align: center;"><span class="status status-red">Báo động</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+</body>
+<script>
+        async function loadDashboardSummary() {
+            const res = await fetch('/api/dashboard/summary');
+            const data = await res.json();
+
+            // Đồng bộ chuẩn hóa dữ liệu từ API thật 100%
+            document.querySelector('.kpi-container .card:nth-child(1) p').innerText = `${data.totalBudget} Tỷ VND`;
+            document.querySelector('.kpi-container .card:nth-child(2) p').innerHTML = `${data.disbursed} Tỷ VND <span class="percentage">(${data.disbursePercent}%)</span>`;
+            document.querySelector('.kpi-container .card:nth-child(3) p').innerText = `${data.avgProgress}%`;
+
+            // 2. Cập nhật bảng danh sách giám sát chi tiết phía dưới
+            // Lấy danh sách nhiệm vụ chi tiết từ API báo cáo tiến độ để vẽ bảng động
+            const resReport = await fetch('/api/report/progress');
+            const reportData = await resReport.json();
+            
+            const tableBody = document.querySelector('.project-section tbody');
+            tableBody.innerHTML = reportData.map(item => {
+                // Xác định màu sắc đèn tín hiệu dựa trên % tiến độ
+                let statusText = "Ổn định";
+                let statusClass = "status-green";
+                let barClass = "green-bar";
+
+                if (item.percent < 30) {
+                    statusText = "Báo động";
+                    statusClass = "status-red";
+                    barClass = "red-bar";
+                } else if (item.percent < 60) {
+                    statusText = "Chậm nhẹ";
+                    statusClass = "status-yellow";
+                    barClass = "yellow-bar";
+                }
+
+                return `
+                    <tr>
+                        <td><strong>${item.text}</strong></td>
+                        <td>100% (Mục tiêu)</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar ${barClass}" style="width: ${item.percent > 100 ? 100 : item.percent}%;">${item.percent}%</div>
+                            </div>
+                        </td>
+                        <td>Lũy kế: <strong>${item.approvedVolume}</strong> / ${item.targetVolume} ${item.unit}</td>
+                        <td style="text-align: center;"><span class="status ${statusClass}">${statusText}</span></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Chạy hàm nạp dữ liệu khi vừa mở trang
+        loadDashboardSummary();
+    </script>
+</html>

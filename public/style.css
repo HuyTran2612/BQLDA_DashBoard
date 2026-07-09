@@ -1,0 +1,187 @@
+:root {
+    --bg-color: #f4f6f9;
+    --sidebar-color: #1e1e2f;
+    --card-color: #ffffff;
+    --text-main: #333333;
+    --primary-color: #3f51b5;
+    --success: #2ecc71;
+    --warning: #f1c40f;
+    --danger: #e74c3c;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-main);
+}
+
+.container {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* Sidebar Styling */
+.sidebar {
+    width: 260px;
+    background-color: var(--sidebar-color);
+    color: #fff;
+    padding: 20px;
+}
+
+.sidebar .logo h2 {
+    font-size: 22px;
+    margin-bottom: 30px;
+    color: #00d2fc;
+}
+
+.sidebar nav ul {
+    list-style: none;
+}
+
+.sidebar nav ul li {
+    margin-bottom: 15px;
+}
+
+.sidebar nav ul li a {
+    color: #b3b3b3;
+    text-decoration: none;
+    display: block;
+    padding: 12px;
+    border-radius: 8px;
+    transition: 0.3s;
+}
+
+.sidebar nav ul li a i {
+    margin-right: 10px;
+}
+
+.sidebar nav ul li.active a, .sidebar nav ul li a:hover {
+    background-color: var(--primary-color);
+    color: #fff;
+}
+
+/* Main Content Styling */
+.main-content {
+    flex: 1;
+    padding: 30px;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+header h1 {
+    font-size: 26px;
+}
+
+.user-profile i {
+    font-size: 24px;
+    margin-left: 10px;
+    vertical-align: middle;
+}
+
+/* Base Card Layout */
+.card {
+    background-color: var(--card-color);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    margin-bottom: 25px;
+}
+
+/* KPI Cards Layout */
+.kpi-container {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 25px;
+}
+
+.kpi-card {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.kpi-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+}
+
+.kpi-icon.blue { background-color: #e8f0fe; color: #1a73e8; }
+.kpi-icon.green { background-color: #e6f4ea; color: #137333; }
+.kpi-icon.orange { background-color: #fef7e0; color: #b06000; }
+
+.kpi-info h3 { font-size: 14px; color: #666; font-weight: 500; }
+.kpi-info p { font-size: 22px; font-weight: bold; margin-top: 5px; }
+.percentage { font-size: 14px; color: #137333; }
+
+/* Table Dashboard */
+.project-section h2 {
+    font-size: 18px;
+    margin-bottom: 20px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+th, td {
+    padding: 15px;
+    border-bottom: 1px solid #eeeeee;
+}
+
+th {
+    background-color: #f8f9fa;
+    color: #555;
+}
+
+/* Progress Bars */
+.progress-bar-container {
+    background-color: #e0e0e0;
+    border-radius: 10px;
+    width: 100%;
+    overflow: hidden;
+}
+
+.progress-bar {
+    color: white;
+    font-size: 12px;
+    text-align: right;
+    padding-right: 10px;
+    font-weight: bold;
+    border-radius: 10px;
+    line-height: 20px;
+}
+
+.green-bar { background-color: var(--success); }
+.yellow-bar { background-color: var(--warning); color: #333; }
+.red-bar { background-color: var(--danger); }
+
+/* Status Badges */
+.status {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.status-green { background-color: #d4edda; color: #155724; }
+.status-yellow { background-color: #fff3cd; color: #856404; }
+.status-red { background-color: #f8d7da; color: #721c24; }

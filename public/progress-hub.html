@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QLDA - Trung Tâm Quản Lý Tiến Độ Thi Công</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .tab-navigation { display: flex; gap: 10px; margin-bottom: 25px; border-bottom: 2px solid #ddd; padding-bottom: 10px; }
+        .tab-btn { padding: 12px 20px; border: none; background: #e0e0e0; font-weight: bold; cursor: pointer; border-radius: 6px; display: flex; align-items: center; gap: 8px; font-size: 14px; transition: 0.3s; }
+        .tab-btn:hover { background: #ccc; }
+        .tab-btn.active { background: #3f51b5; color: white; }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
+        .flex-layout { display: flex; gap: 25px; flex-wrap: wrap; }
+        .col-1 { flex: 1; min-width: 320px; }
+        .col-2 { flex: 2; min-width: 450px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 500; font-size: 14px; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; }
+        .btn-block { width: 100%; padding: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 15px; }
+        
+        .tree-node { margin-left: 20px; margin-top: 8px; position: relative; }
+        .tree-node::before { content: ""; position: absolute; top: -10px; left: -12px; border-left: 2px dashed #ccc; border-bottom: 2px dashed #ccc; width: 12px; height: 22px; }
+        .node-box { padding: 10px; border-radius: 6px; display: inline-block; font-size: 13px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .project-node { background: #e8f0fe; color: #1a73e8; font-weight: bold; }
+        .package-node { background: #e6f4ea; color: #137333; }
+        .category-node { background: #fef7e0; color: #b06000; }
+        .task-node { background: #fff; border: 1px solid #ddd; }
+        
+        .log-item { display: flex; gap: 15px; border-bottom: 1px solid #eee; padding: 12px 0; align-items: center; }
+        .log-img { width: 80px; height: 80px; object-fit: cover; border-radius: 6px; border: 1px solid #ddd; }
+        .badge { padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; }
+        .bg-wait { background: #fff3cd; color: #856404; }
+        .bg-ok { background: #d4edda; color: #155724; }
+        .bg-fail { background: #f8d7da; color: #721c24; }
+
+        .bar-outer { background: #e0e0e0; border-radius: 6px; overflow: hidden; height: 20px; width: 100%; margin-top: 5px; }
+        .bar-inner { background: #3f51b5; height: 100%; color: white; text-align: right; padding-right: 10px; font-size: 11px; line-height: 20px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <aside class="sidebar">
+            <div class="logo"><h2><i class="fa-solid fa-layer-group"></i> QLDA Pro</h2></div>
+            <nav>
+                <ul>
+                    <li><a href="/"><i class="fa-solid fa-chart-pie"></i> Tổng quan</a></li>
+                    <li class="active"><a href="/progress-hub.html"><i class="fa-solid fa-trowel-bricks"></i> Tiến độ thi công</a></li>
+                    <li><a href="/disburse-hub.html"><i class="fa-solid fa-money-bill-trend-up"></i> Tiến độ giải ngân</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header>
+                <h1>Phân Hệ Quản Lý Tiến Độ Thi Công</h1>
+                <div class="user-profile"><span class="badge bg-ok" style="font-size:14px;"><i class="fa-solid fa-user-shield"></i> Quyền: Admin tổng</span></div>
+            </header>
+
+            <div class="tab-navigation">
+                <button class="tab-btn active" onclick="switchTab(event, 'tab-wbs')"><i class="fa-solid fa-sitemap"></i> 1. Cấu trúc WBS</button>
+                <button class="tab-btn" onclick="switchTab(event, 'tab-input')"><i class="fa-solid fa-pen-to-square"></i> 2. Nhật ký hiện trường</button>
+                <button class="tab-btn" onclick="switchTab(event, 'tab-approve')"><i class="fa-solid fa-user-check"></i> 3. Phê duyệt khối lượng</button>
+                <button class="tab-btn" onclick="switchTab(event, 'tab-report')"><i class="fa-solid fa-chart-bar"></i> 4. Báo cáo sản lượng</button>
+            </div>
+
+            <div id="tab-wbs" class="tab-panel active">
+                <div class="flex-layout">
+                    <div class="card col-1">
+                        <h2>Thêm Cấp Bậc Phân Rã</h2>
+                        <form id="wbsForm" style="margin-top:15px;">
+                            <div class="form-group"><label>Mã ID</label><input type="text" id="wbsId" placeholder="Ví dụ: 1.1.1.2" required></div>
+                            <div class="form-group"><label>Thuộc cấp cha (ID cha)</label><input type="text" id="wbsParent" placeholder="Bỏ trống nếu là gốc"></div>
+                            <div class="form-group"><label>Tên hạng mục/đầu việc</label><input type="text" id="wbsText" required></div>
+                            <div class="form-group">
+                                <label>Loại cấp</label>
+                                <select id="wbsType">
+                                    <option value="project">Dự án Tổng</option>
+                                    <option value="package">Gói thầu</option>
+                                    <option value="category">Hạng mục lớn</option>
+                                    <option value="task">Công việc chi tiết</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn-block" style="background:#3f51b5; color:#fff;">Cập nhật WBS</button>
+                        </form>
+                    </div>
+                    <div class="card col-2">
+                        <h2>Sơ đồ cây phân cấp dự án</h2>
+                        <div id="wbsTreeContainer" style="margin-top:15px;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-input" class="tab-panel">
+                <div class="flex-layout">
+                    <div class="card col-1">
+                        <h2>Báo cáo sản lượng ngày</h2>
+                        <form id="logForm" style="margin-top:15px;">
+                            <div class="form-group"><label>Chọn hạng mục thi công</label><select id="logTaskId"></select></div>
+                            <div class="form-group"><label>Ngày thực hiện</label><input type="date" id="logDate" required></div>
+                            <div class="form-group"><label>Khối lượng thực hiện trong ngày</label><input type="number" id="logVolume" required></div>
+                            <div class="form-group"><label>Link ảnh bằng chứng nghiệm thu</label><input type="text" id="logImageUrl" placeholder="Dán link ảnh mẫu vào đây..."></div>
+                            <div class="form-group"><label>Ghi chú hiện trường</label><textarea id="logNote" rows="2"></textarea></div>
+                            <button type="submit" class="btn-block" style="background:#2ecc71; color:#fff;">Gửi báo cáo ngày</button>
+                        </form>
+                    </div>
+                    <div class="card col-2">
+                        <h2>Nhật ký cập nhật từ công trường</h2>
+                        <div id="logHistoryContainer" style="margin-top:15px;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-approve" class="tab-panel">
+                <div class="card">
+                    <h2>Danh sách hồ sơ chờ duyệt nghiệm thu</h2>
+                    <div id="approveContainer" style="margin-top:15px;"></div>
+                </div>
+            </div>
+
+            <div id="tab-report" class="tab-panel">
+                <div class="card" style="margin-bottom:20px;">
+                    <h2>Biểu đồ so sánh sản lượng</h2>
+                    <div style="position:relative; height:280px;"><canvas id="chartCanvas"></canvas></div>
+                </div>
+                <div class="card">
+                    <h2>Tỷ lệ phần trăm hoàn thành lũy kế</h2>
+                    <div id="reportListContainer" style="margin-top:15px;"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.getElementById('logDate').value = new Date().toISOString().split('T')[0];
+        let currentChart = null;
+
+        function switchTab(event, tabId) {
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            event.currentTarget.classList.add('active');
+
+            if(tabId === 'tab-wbs') loadWBS();
+            if(tabId === 'tab-input') { loadDropdownTasks(); loadLogs(); }
+            if(tabId === 'tab-approve') loadApproveList();
+            if(tabId === 'tab-report') loadReport();
+        }
+
+        async function loadWBS() {
+            const res = await fetch('/api/wbs');
+            const data = await res.json();
+            const container = document.getElementById('wbsTreeContainer');
+            container.innerHTML = '';
+            const roots = data.filter(n => !n.parentId);
+            roots.forEach(r => container.appendChild(renderTreeNode(r, data)));
+        }
+        function renderTreeNode(node, allData) {
+            const div = document.createElement('div');
+            div.className = 'tree-node';
+            div.innerHTML = `<div class="node-box ${node.type}-node"><strong>[ID ${node.id}]</strong> ${node.text}</div>`;
+            const children = allData.filter(c => c.parentId === node.id);
+            children.forEach(c => div.appendChild(renderTreeNode(c, allData)));
+            return div;
+        }
+        document.getElementById('wbsForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const node = {
+                id: document.getElementById('wbsId').value,
+                parentId: document.getElementById('wbsParent').value || null,
+                text: document.getElementById('wbsText').value,
+                type: document.getElementById('wbsType').value
+            };
+            await fetch('/api/wbs', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(node) });
+            alert('Đã cập nhật cấu trúc WBS thành công!');
+            document.getElementById('wbsForm').reset();
+            loadWBS();
+        });
+
+        async function loadDropdownTasks() {
+            const res = await fetch('/api/tasks');
+            const tasks = await res.json();
+            document.getElementById('logTaskId').innerHTML = tasks.map(t => `<option value="${t.id}">[${t.id}] ${t.text}</option>`).join('');
+        }
+        async function loadLogs() {
+            const res = await fetch('/api/progress-logs');
+            const logs = await res.json();
+            document.getElementById('logHistoryContainer').innerHTML = logs.map(l => `
+                <div class="log-item">
+                    <img class="log-img" src="${l.image || 'https://via.placeholder.com/80'}" alt="ảnh">
+                    <div>
+                        <h4>${l.taskText}</h4>
+                        <p style="font-size:13px; color:#555;">Sản lượng: <strong>+ ${l.volume} ${l.unit}</strong> | Ghi chú: ${l.note}</p>
+                        <span class="badge ${l.status==='Đã nghiệm thu'?'bg-ok':(l.status==='Bị từ chối'?'bg-fail':'bg-wait')}">${l.status}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+        document.getElementById('logForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const log = {
+                taskId: document.getElementById('logTaskId').value,
+                date: document.getElementById('logDate').value,
+                volume: document.getElementById('logVolume').value,
+                imageUrl: document.getElementById('logImageUrl').value,
+                note: document.getElementById('logNote').value
+            };
+            await fetch('/api/progress-logs', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(log) });
+            alert('Đã nộp báo cáo hiện trường!');
+            document.getElementById('logForm').reset();
+            loadLogs();
+        });
+
+        async function loadApproveList() {
+            const res = await fetch('/api/progress-logs');
+            const logs = await res.json();
+            const container = document.getElementById('approveContainer');
+            const pendingLogs = logs.filter(l => l.status === "Chờ duyệt");
+            
+            if(pendingLogs.length === 0) { container.innerHTML = '<p>Hiện tại không có hồ sơ nào chờ nghiệm thu.</p>'; return; }
+            container.innerHTML = pendingLogs.map(l => `
+                <div class="log-item" style="justify-content: space-between; background:#fafafa; padding:15px; border-radius:6px; margin-bottom:10px;">
+                    <div style="display:flex; gap:15px;">
+                        <img class="log-img" src="${l.image}">
+                        <div>
+                            <h4>${l.taskText}</h4>
+                            <p>Khối lượng: <strong style="color:blue;">+${l.volume} ${l.unit}</strong></p>
+                            <p style="font-size:13px; color:#666;">Giải trình: ${l.note} (${l.date})</p>
+                        </div>
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:8px;">
+                        <button class="badge bg-ok" style="border:none; padding:8px 15px; cursor:pointer;" onclick="actionApprove(${l.id}, 'Đã nghiệm thu')">Nghiệm thu</button>
+                        <button class="badge bg-fail" style="border:none; padding:8px 15px; cursor:pointer;" onclick="actionApprove(${l.id}, 'Bị từ chối')">Từ chối</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        async function actionApprove(id, status) {
+            await fetch('/api/progress-logs/approve', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({logId: id, status: status}) });
+            alert(`Đã duyệt hồ sơ: ${status}`);
+            loadApproveList();
+        }
+
+        async function loadReport() {
+            const res = await fetch('/api/report/progress');
+            const data = await res.json();
+            
+            document.getElementById('reportListContainer').innerHTML = data.map(item => `
+                <div style="margin-bottom: 15px;">
+                    <div style="display:flex; justify-content:space-between; font-size:13px;">
+                        <span><strong>${item.text}</strong> (${item.approvedVolume}/${item.targetVolume} ${item.unit})</span>
+                        <span>${item.percent}%</span>
+                    </div>
+                    <div class="bar-outer"><div class="bar-inner" style="width: ${item.percent>100?100:item.percent}%"></div></div>
+                </div>
+            `).join('');
+
+            if(currentChart) currentChart.destroy();
+            const ctx = document.getElementById('chartCanvas').getContext('2d');
+            currentChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.map(i => i.text),
+                    datasets: [
+                        { label: 'Kế hoạch', data: data.map(i => i.targetVolume), backgroundColor: '#e0e0e0' },
+                        { label: 'Thực tế đạt', data: data.map(i => i.approvedVolume), backgroundColor: '#3f51b5' }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+
+        loadWBS();
+    </script>
+</body>
+</html>
